@@ -2,6 +2,7 @@ interface EquipmentConfig{
   hostname?: string;
   entity?: string;
   model: string;
+  position_topu?: number;
 }
 
 

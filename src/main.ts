@@ -73,7 +73,8 @@ class RackerStacker extends LitElement {
     let height_pixels = Math.floor( model.rack_u * height_1u );
     let img_type = model?.img_type ? model.img_type : "jpg";
     var model_image = `${this._urlRoot}/models/${eq.model}_${this._config?.facing ? this._config.facing : "front"}.${img_type}`;
-
+    let posu = 20+Math.floor(48 - eq.position_topu )*height_1u;
+    console.log(`Pos for ${eq.hostname} is ${posu}`);
     var stateIndicator;
     if (eq.entity && this._hass){
         const state = this._hass.states[eq.entity];
@@ -91,25 +92,44 @@ class RackerStacker extends LitElement {
 	}
     }
     return html`
-    	<div>
+    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px, height: ${height_pixels}px; left 60px;">
 	   ${stateIndicator}
 	   <img src="${model_image}" alt style="filter: grayscale(1.0); display: block; width: ${width_pixels}px">
 	</div>`;
   }
 
   rackHeader(){
+	  var head;
 	  if (this._config.name){
-		  return html`<div>${this._config.name}</div>`;
+		  head = html` <div style="position: absolute; top: 0px; left 0px;">
+		  <div style="width:100%; height 120px;  text-align: center; margin-bottom: 5px;">
+				<div style="width:460px; margin: 0 auto; 5px;padding: 10px; height 120px;   border-radius: 10px; background-color: grey; color: rgb(80,80,80);">
+				<span style="font-size: 20px; font-weight: 800;">${this._config.name}</span>
+				</div>
+				</div>
+			     </div>`;
 	  }
+	  return head;
   }
 
   render() {
+    const rackEl = 48;
+     
     return html`
     	<div> 
-	${this.rackHeader()}
-	${this._config.equipment.map( (eq) => {
-		return this.equipmentTemplate(eq);
-	})}
+	  ${this.rackHeader()}
+          
+          <div style="position: absolute; top: ${this._config?.name ? 60 : 0}px; left 0px;">
+          	<div style="margin: 0 auto; padding: 20px; padding-left: 35px; padding-right: 35px; width: 410px; height: ${rackEl*40}px; background-color: grey;">
+          		${ Array.from({length: rackEl}, (_, i) => i).map( (racku) => {
+          			return html`<div style="position: absolute;  top: ${20+(racku)*40}px; left: 5px; width: 25px; height: 40px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${48-racku}</div>`; 
+          			}) }
+          		${this._config.equipment.map( (eq) => {
+          			return this.equipmentTemplate(eq);
+          		})}
+          	</div>
+          </div>
+
 	</div>`;
   }
 
