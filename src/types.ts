@@ -15,6 +15,7 @@ export interface RackerEquipmentModel {
 export interface RackerConfig {
   name?: string;
   facing?: string;  // "front" (default) or "rear"
+  rack_height?: number; // in U - defaults to 48
   equipment?: EquipmentConfig[];
 }
 
