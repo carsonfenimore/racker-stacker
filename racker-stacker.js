@@ -138,10 +138,13 @@ class RackerStacker extends s {
         this._rackU = (config === null || config === void 0 ? void 0 : config.rack_height) ? config === null || config === void 0 ? void 0 : config.rack_height : this._defaultRackHeight;
     }
     async requestModel(model) {
+        // We store models inside /local/racker-stacker/models. Each model
+        // defines some common attributes for all instances of this model.  The images are
+        // not stored inside the model, but alongside it 
         let url = `${this._urlRoot}/models/${model}.json`;
         let resp = await fetch(url);
         if (!resp.ok) {
-            console.log(`Failed to get ${url}`);
+            console.log(`Failed to get model descriptor from ${url}`);
             this._modelErrors.set(model, `Failed to load ${url}`);
             this.requestUpdate();
             return;
@@ -154,8 +157,11 @@ class RackerStacker extends s {
     }
     equipmentTemplate(eq) {
         var _a;
+        const lineHeight = 35;
+        // We track equipIds to give us a nice identifier for the DOM elements
         const equipId = this._equipId + 1;
         this._equipId = equipId;
+        // Lets fetch the model asynchronously - we will show "Loading..." on each equipment until this returns
         if (!this._models.has(eq.model)) {
             this._models.set(eq.model, null);
             window.setTimeout(() => { this.requestModel(eq.model); }, 1);
@@ -167,32 +173,33 @@ class RackerStacker extends s {
             }
             return x `<div>${msg}</div>`;
         }
+        // If the model is already fetched, go ahead and show it
         let model = this._models.get(eq.model);
         let width_pixels = Math.floor((model.width_inches / this._rackWidthInches) * this._pixelsRackWidthMax);
         let height_pixels = Math.floor(model.rack_u * this._pixelsPerU);
         let img_type = (model === null || model === void 0 ? void 0 : model.img_type) ? model.img_type : "jpg";
         var model_image = `${this._urlRoot}/models/${eq.model}_${((_a = this._config) === null || _a === void 0 ? void 0 : _a.facing) ? this._config.facing : "front"}.${img_type}`;
         let posu = 55 + Math.floor(this._rackU - eq.position_topu) * this._pixelsPerU;
-        //console.log(`Pos for ${eq.hostname} is ${posu}`);
         var stateIndicator;
         var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+        // for now, only color FAILING equipment
         if (errors.length) {
-            // for now, only color FAILING equipment
             const color = "rgba(255,0,0,0.7)";
             stateIndicator = x `
 	      <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
       `;
         }
+        // Show a label describing which of the sensors is erroring
         var errorLabel;
         const errorLabelIdStr = `errorLabel-${equipId}`;
         if (errors) {
-            errorLabel = x `<div id=${errorLabelIdStr} class="errorLabel" style="position: absolute; top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${this._pixelsRackWidthMax}px;">
+            errorLabel = x `<div id=${errorLabelIdStr} class="errorLabel" style=" top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${this._pixelsRackWidthMax}px;">
 		<b>Triggering Sensors:</b>
 		<ul>
 		${errors.map((err) => { return x `<li>${err}</li>`; })}
    		</ul>  </div>`;
         }
-        const lineHeight = 35;
+        // Show the equipment hostname (if mouse over)
         const equipLabelIdStr = `equipmentLabel-${equipId}`;
         var hostnameLabel = x `
     	<div class="hostnameLabel" @mouseenter=${(e) => { this.hostnameLabelMouseEnter(eq, equipLabelIdStr, errorLabelIdStr); }} @mouseleave=${(e) => { this.hostnameLabelMouseLeave(eq, equipLabelIdStr, errorLabelIdStr); }} style="width: ${width_pixels}px; height: ${height_pixels}px; ">
@@ -206,12 +213,14 @@ class RackerStacker extends s {
 	   <img src="${model_image}" alt style="${stateIndicator ? 'filter: grayscale(1.0)' : ''}; display: block; width: ${width_pixels}px">
 	</div>`;
     }
+    // Handle a single entity or list of entities
     getEquipmentSensors(eq) {
         if (typeof (eq.entity) == "string") {
             return [eq.entity];
         }
         return eq.entity;
     }
+    // Prob this only works for binary sensors - but we could always extend the sensor list to include thresholds for non-binary
     getErroringSensors(sensors, hass) {
         var badSensors = [];
         for (const sens of sensors) {
@@ -224,7 +233,7 @@ class RackerStacker extends s {
         return badSensors;
     }
     hostnameLabelMouseEnter(eq, equipIdStr, errorLabelIdStr) {
-        console.log("Enter ", equipIdStr);
+        //console.log("Enter ",equipIdStr);
         this.shadowRoot.getElementById(equipIdStr).style.display = "block";
         var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
         if (eqErrors.length) {
@@ -232,14 +241,14 @@ class RackerStacker extends s {
         }
     }
     hostnameLabelMouseLeave(eq, equipIdStr, errorLabelIdStr) {
-        console.log("Leave ", equipIdStr);
+        //console.log("Leave ",equipIdStr);
         this.shadowRoot.getElementById(equipIdStr).style.display = "none";
         this.shadowRoot.getElementById(errorLabelIdStr).style.display = "none";
     }
     rackHeader() {
         var _a;
-        var name = ((_a = this._config) === null || _a === void 0 ? void 0 : _a.name) ? this._config.name : x `&nbsp;`;
         const headerHeight = 30;
+        var name = ((_a = this._config) === null || _a === void 0 ? void 0 : _a.name) ? this._config.name : x `&nbsp;`;
         return x ` <div class="rackHeader" style="height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name}
 			   </div>`;
@@ -248,11 +257,8 @@ class RackerStacker extends s {
         if (!this._hass)
             return;
         for (const eq of this._config.equipment) {
-            if (!eq.entity)
-                continue;
-            const state = this._hass.states[eq.entity];
-            var stateStr = state ? state.state : "unavailable";
-            if (stateStr !== 'on') {
+            var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+            if (errors.length) {
                 return x `
           	<div class="blink_me rackError" style=" width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels * 2}px; height: ${this._rackU * this._pixelsPerU - this._rackAlarmBorderPixels * 2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
 		</div>`;
@@ -273,10 +279,8 @@ class RackerStacker extends s {
         this._equipId = 0;
         return x `
     	<div> 
-	  ${this.rackHeader()}
-          
-	  ${this.renderRackAlarm()}
-
+	      ${this.rackHeader()}
+	      ${this.renderRackAlarm()}
           <div class="rack" style="width: ${this._pixelsRackWidthMax}px; height: ${this._rackU * this._pixelsPerU}px;">
           		${Array.from({ length: this._rackU }, (_, i) => i).map((racku) => {
             return this.rackElLabel(racku);
@@ -285,9 +289,7 @@ class RackerStacker extends s {
             return this.equipmentTemplate(eq);
         })}
           </div>
-
-
-	</div>`;
+	    </div>`;
     }
     getCardSize() {
         return 3;
@@ -361,6 +363,7 @@ RackerStacker.styles = i$2 `
 		font-size: 25px; 
 	}
 	.errorLabel {
+        position: absolute;
 		border: 2px black solid;
 		border-radius: 12px;
 		background: white;
@@ -394,7 +397,7 @@ __decorate([
 ], RackerStacker.prototype, "_rackU", void 0);
 if (!customElements.get("racker-stacker")) {
     customElements.define("racker-stacker", RackerStacker);
-    console.groupCollapsed(`%cRACKER-STACKER ${pjson.version}  IS INSTALLED`, "color: green; font-weight: bold");
+    console.groupCollapsed(`%cRACKER-STACKER ${pjson.version} IS INSTALLED`, "color: green; font-weight: bold");
     console.log("Readme:", "https://github.com/carsonfenimore/racker-stacker");
     console.groupEnd();
 }
