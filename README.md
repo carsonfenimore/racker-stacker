@@ -21,6 +21,8 @@ In order to define your rack you must have a model for each equipment item. Mode
 
 Note that any image format is supported - but jpg is the default.
 
+A few sample models are included in this repo - including a NetApp C250 and a time machine NTP box.  
+
 ## Model Metadata 
 For each model the json can contain the following:
   - width_inches (required) - equipment width in inches
