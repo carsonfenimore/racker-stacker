@@ -91,6 +91,17 @@ class RackerStacker extends LitElement {
 		color: white; 
 		font-size: 25px; 
 	}
+	.errorLabel {
+		border: 2px black solid;
+		border-radius: 12px;
+		background: white;
+		z-index: 10;
+		padding: 10px;
+		display: none;
+	}
+	.errorLabel ul {
+		margin: 5px;
+	}
 	@keyframes blinker {
 	  50% {
 	    opacity: 0;
@@ -166,39 +177,74 @@ class RackerStacker extends LitElement {
     let posu = 55+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
     //console.log(`Pos for ${eq.hostname} is ${posu}`);
     var stateIndicator;
-    if (eq.entity && this._hass){
-        const state = this._hass.states[eq.entity];
-        var stateStr = state ? state.state : "unavailable";
-        //console.log(`Entity ${eq.entity} has state ${stateStr}`);
-	var color;
-	if (stateStr === 'off'){
-           // for now, only color FAILING equipment
-           color = "rgba(255,0,0,0.7)";
-           stateIndicator = html`
-              <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
-           `;
-	}
+    var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+    if (errors.length){
+      // for now, only color FAILING equipment
+      const color = "rgba(255,0,0,0.7)";
+      stateIndicator = html`
+	      <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
+      `;
+    }
+
+    var errorLabel;
+    const errorLabelIdStr = `errorLabel-${equipId}`;
+    if (errors){
+    	errorLabel = html`<div id=${errorLabelIdStr} class="errorLabel" style="position: absolute; top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${this._pixelsRackWidthMax}px;">
+		<b>Triggering Sensors:</b>
+		<ul>
+		${errors.map( (err) => { return html`<li>${err}</li>`;})}
+   		</ul>  </div>`;
     }
 
     const lineHeight = 35;
-    const equipIdStr = `equipment-${equipId}`
-    var hostnameLabel = html`<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipIdStr);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipIdStr);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
-    	<div id="${equipIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div></div>`;
+    const equipLabelIdStr = `equipmentLabel-${equipId}`;
+    var hostnameLabel = html`
+    	<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipLabelIdStr, errorLabelIdStr);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipLabelIdStr, errorLabelIdStr);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
+    		<div id="${equipLabelIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div>
+	</div>`;
     return html`
-    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; left 60px;">
+    	${errorLabel}
+    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; ">
 	   ${stateIndicator}
 	   ${hostnameLabel}
 	   <img src="${model_image}" alt style="${ stateIndicator ? 'filter: grayscale(1.0)' : ''}; display: block; width: ${width_pixels}px">
 	</div>`;
   }
 
-  hostnameLabelMouseEnter(eq, equipIdStr){
+  getEquipmentSensors(eq){
+	if (typeof(eq.entity) == "string"){
+		return [eq.entity];
+	}
+	return eq.entity;
+  }    
+
+  getErroringSensors(sensors, hass){
+    var badSensors = [];
+    for (const sens of sensors){
+	    if (hass && hass.states[sens]){
+		    if (hass.states[sens].state === 'off'){
+			    badSensors.push(sens);
+		    } else {
+			    //console.log("State of ", sens, " is ", hass.states[sens]);
+		    }
+	    }
+    }
+    return badSensors;
+  }
+
+
+  hostnameLabelMouseEnter(eq, equipIdStr, errorLabelIdStr){
 	  console.log("Enter ",equipIdStr);
 	  this.shadowRoot.getElementById(equipIdStr).style.display = "block";
+	  var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+	  if (eqErrors.length){
+		  this.shadowRoot.getElementById(errorLabelIdStr).style.display = "block";
+	  }
   }
-  hostnameLabelMouseLeave(eq, equipIdStr){
+  hostnameLabelMouseLeave(eq, equipIdStr, errorLabelIdStr){
 	  console.log("Leave ",equipIdStr);
 	  this.shadowRoot.getElementById(equipIdStr).style.display = "none";
+	  this.shadowRoot.getElementById(errorLabelIdStr).style.display = "none";
   }
 
 
