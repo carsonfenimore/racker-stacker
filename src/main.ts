@@ -22,20 +22,84 @@ class RackerStacker extends LitElement {
   _models = new Map<string, RackerEquipmentModel>();
   _modelErrors = new Map<string, string>();
   _entityStates = new Map<string, string>(); // entity_id -> state
+  _equipId = 0;
 
   static styles = css`
 	.blink_me {
 		animation: blinker ${ALARM_FLASH_CYCLE_SECONDS}s ease-in-out infinite;
+	}
+	.rack { 
+		margin: 0 auto; 
+		margin-left: 0px; 
+		margin-top: 15px; 
+		padding: 20px; 
+		padding-left: 35px; 
+		padding-right: 35px; 
+		background-color: grey;
+	}
+	.rackElIndicator {
+		color: rgb(80,80,80); 
+		text-align: right; 
+		font-weight: 900; 
+		font-size: 20px;
+		position: absolute;  
+	}
+	.rackError {
+		float: left; 
+		margin: 0 auto; 
+		padding: 20px; 
+		padding-left: 35px; 
+		margin-top: 15px; 
+		padding-right: 35px;
+		background-color: none;  
+		top: 60px;
+	}
+	.rackHeader {
+		-webkit-text-stroke-width: 1px; 
+		-webkit-text-stroke-color: black; 
+		color: white; 
+		vertical-align: middle; 
+		font-size: 30px; 
+		font-weight: 800;
+		width:460px; 
+		text-align: center; 
+		margin: 0 auto; 5px;
+		margin-left: 0px;  
+		padding: 10px; 
+		border-radius: 10px; 
+		background-color: grey; 
+	}
+	.hostnameLabelInner {
+		position: absolute; 
+		margin: 0 auto;
+		background-color: grey;
+		height: 35px;
+		min-width: 60%;
+		text-align: center;
+		vertical-align: middle;
+		border-radius: 12px;
+		display: none;
+	}
+	.hostnameLabel { 
+		border-radius: 12px; 
+		position: absolute; 
+		background: none; 
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 4; 
+		color: white; 
+		font-size: 25px; 
 	}
 	@keyframes blinker {
 	  50% {
 	    opacity: 0;
 	  }
 	  100% {
-	    opacity: 0.5;
+	    opacity: 0.6;
 	  }
 	  0% {
-	    opacity: 0.5;
+	    opacity: 0.6;
 	  }
 	}
   `;
@@ -73,12 +137,15 @@ class RackerStacker extends LitElement {
     }
     let data: RackerEquipmentModel = await resp.json();
     this._models.set(model, data);
-    console.log(`Got json for ${model}: ${this._models.get(model)}`);
+    //console.log(`Got json for ${model}: ${this._models.get(model)}`);
     // TODO: only request update if no more pending
     this.requestUpdate();
   }
   
   equipmentTemplate(eq){	
+    const equipId = this._equipId + 1;
+    this._equipId = equipId;
+
     if (!this._models.has(eq.model)){
 	this._models.set(eq.model, null);
 	window.setTimeout( () => { this.requestModel( eq.model ); }, 1 );
@@ -112,17 +179,33 @@ class RackerStacker extends LitElement {
            `;
 	}
     }
+
+    const lineHeight = 35;
+    const equipIdStr = `equipment-${equipId}`
+    var hostnameLabel = html`<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipIdStr);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipIdStr);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
+    	<div id="${equipIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div></div>`;
     return html`
-    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px, height: ${height_pixels}px; left 60px;">
+    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; left 60px;">
 	   ${stateIndicator}
+	   ${hostnameLabel}
 	   <img src="${model_image}" alt style="${ stateIndicator ? 'filter: grayscale(1.0)' : ''}; display: block; width: ${width_pixels}px">
 	</div>`;
   }
 
+  hostnameLabelMouseEnter(eq, equipIdStr){
+	  console.log("Enter ",equipIdStr);
+	  this.shadowRoot.getElementById(equipIdStr).style.display = "block";
+  }
+  hostnameLabelMouseLeave(eq, equipIdStr){
+	  console.log("Leave ",equipIdStr);
+	  this.shadowRoot.getElementById(equipIdStr).style.display = "none";
+  }
+
+
   rackHeader(){
 	  var name = this._config?.name ? this._config.name : html`&nbsp;`;
 	  const headerHeight = 30;
-	  return html` <div style="  -webkit-text-stroke-width: 1px; -webkit-text-stroke-color: black; color: white; vertical-align: middle; font-size: 30px; font-weight: 800;width:460px; text-align: center; margin: 0 auto; 5px;margin-left: 0px;  padding: 10px; height ${headerHeight}px; line-height: ${headerHeight}px;  border-radius: 10px; background-color: grey; ">
+	  return html` <div class="rackHeader" style="height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name }
 			   </div>`;
   }
@@ -139,7 +222,7 @@ class RackerStacker extends LitElement {
       var stateStr = state ? state.state : "unavailable";
       if (stateStr !== 'on'){
 	    return html`
-          	<div class="blink_me" style="float: left; margin: 0 auto; padding: 20px; padding-left: 35px; margin-top: 15px; padding-right: 35px; width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; background-color: none; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); top: 60px;">
+          	<div class="blink_me rackError" style=" width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
 		</div>`;
       }
     }
@@ -151,19 +234,20 @@ class RackerStacker extends LitElement {
     const indicatorOffsetRight = 7;
     const indicatorVerticalOffset = 95;
     return html`<div>
-    			<div style="position: absolute;  top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${this._rackU - racku}</div>
-    			<div style="position: absolute;  top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
 		</div>`; 
   }
 
   render() {
-    
+    this._equipId = 0;
     return html`
     	<div> 
 	  ${this.rackHeader()}
           
 	  ${this.renderRackAlarm()}
-          <div style="margin: 0 auto; margin-left: 0px; margin-top: 15px; padding: 20px; padding-left: 35px; padding-right: 35px; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px; background-color: grey;">
+
+          <div class="rack" style="width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
           		${ Array.from({length: this._rackU}, (_, i) => i).map( (racku) => {
           			return this.rackElLabel(racku);
           			}) }
