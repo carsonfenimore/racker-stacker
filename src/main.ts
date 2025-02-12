@@ -23,6 +23,7 @@ class RackerStacker extends LitElement {
   _modelErrors = new Map<string, string>();
   _entityStates = new Map<string, string>(); // entity_id -> state
   _equipId = 0;
+  _infoPopup = null;
 
   static styles = css`
 	.blink_me {
@@ -91,7 +92,7 @@ class RackerStacker extends LitElement {
 		color: white; 
 		font-size: 25px; 
 	}
-	.errorLabel {
+	.infoLabel {
         position: absolute;
 		border: 2px black solid;
 		border-radius: 12px;
@@ -100,9 +101,16 @@ class RackerStacker extends LitElement {
 		padding: 10px;
 		display: none;
 	}
-	.errorLabel ul {
+    .equipmentTitle {
+        font-weight: 800;
+        font-size: 16px;
+    }
+	.infoLabel ul {
 		margin: 5px;
 	}
+    .triggeredSensors {
+        margin-top: 5px;
+    }
 	@keyframes blinker {
 	  50% {
 	    opacity: 0;
@@ -195,24 +203,36 @@ class RackerStacker extends LitElement {
     }
 
     // Show a label describing which of the sensors is erroring
-    var errorLabel;
-    const errorLabelIdStr = `errorLabel-${equipId}`;
-    if (errors){
-    	errorLabel = html`<div id=${errorLabelIdStr} class="errorLabel" style=" top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${this._pixelsRackWidthMax}px;">
-		<b>Triggering Sensors:</b>
-		<ul>
-		${errors.map( (err) => { return html`<li>${err}</li>`;})}
-   		</ul>  </div>`;
+    const infoPopupId = `info-${equipId}`;
+    const equipLabelIdStr = `equipmentLabel-${equipId}`;
+    var urlTag;
+    if (eq.url){
+        urlTag = html`<a target="_blank" href=${eq.url}>${eq.url}</a><br />`;
     }
+    var errorTag;
+    if (errors.length){
+        errorTag = html`
+        <div class="triggeredSensors">
+            <b>Triggering Sensors:</b>
+            <ul>
+            ${errors.map( (err) => { return html`<li>${err}</li>`;})}
+            </ul>
+        </div>`;
+    }
+    var infoTag = html`
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
+        <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
+        ${urlTag} 
+        ${errorTag}
+    </div>`;
 
     // Show the equipment hostname (if mouse over)
-    const equipLabelIdStr = `equipmentLabel-${equipId}`;
     var hostnameLabel = html`
-    	<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipLabelIdStr, errorLabelIdStr);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipLabelIdStr, errorLabelIdStr);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
+    	<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipLabelIdStr, infoPopupId);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipLabelIdStr, infoPopupId);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
     		<div id="${equipLabelIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div>
 	</div>`;
     return html`
-    	${errorLabel}
+    	${infoTag}
     	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; ">
 	   ${stateIndicator}
 	   ${hostnameLabel}
@@ -244,18 +264,31 @@ class RackerStacker extends LitElement {
   }
 
 
-  hostnameLabelMouseEnter(eq, equipIdStr, errorLabelIdStr){
+  infoMouseEnter(eq, infoPopupId){
+    this._infoPopup = infoPopupId;
+  }
+
+  hostnameLabelMouseEnter(eq, equipIdStr, infoPopupIdStr){
 	  //console.log("Enter ",equipIdStr);
 	  this.shadowRoot.getElementById(equipIdStr).style.display = "block";
 	  var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
-	  if (eqErrors.length){
-		  this.shadowRoot.getElementById(errorLabelIdStr).style.display = "block";
-	  }
+      this.shadowRoot.getElementById(infoPopupIdStr).style.display = "block";
   }
-  hostnameLabelMouseLeave(eq, equipIdStr, errorLabelIdStr){
+
+  infoPopupMouseLeave(eq, equipIdStr, infoPopupIdStr){
+	  console.log("Leave info on ",eq.hostname);
+      this._infoPopup = null;
+      this.shadowRoot.getElementById(infoPopupIdStr).style.display = "none";
+  }
+
+  hostnameLabelMouseLeave(eq, equipIdStr, infoPopupIdStr){
 	  //console.log("Leave ",equipIdStr);
-	  this.shadowRoot.getElementById(equipIdStr).style.display = "none";
-	  this.shadowRoot.getElementById(errorLabelIdStr).style.display = "none";
+      setTimeout( () => {
+          this.shadowRoot.getElementById(equipIdStr).style.display = "none";
+          if (this._infoPopup != infoPopupIdStr){
+              this.shadowRoot.getElementById(infoPopupIdStr).style.display = "none";
+          }
+    }, 10);
   }
 
 

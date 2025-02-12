@@ -118,6 +118,7 @@ class RackerStacker extends s {
         this._modelErrors = new Map();
         this._entityStates = new Map(); // entity_id -> state
         this._equipId = 0;
+        this._infoPopup = null;
     }
     static getStubConfig() {
         return {
@@ -190,23 +191,35 @@ class RackerStacker extends s {
       `;
         }
         // Show a label describing which of the sensors is erroring
-        var errorLabel;
-        const errorLabelIdStr = `errorLabel-${equipId}`;
-        if (errors) {
-            errorLabel = x `<div id=${errorLabelIdStr} class="errorLabel" style=" top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${this._pixelsRackWidthMax}px;">
-		<b>Triggering Sensors:</b>
-		<ul>
-		${errors.map((err) => { return x `<li>${err}</li>`; })}
-   		</ul>  </div>`;
-        }
-        // Show the equipment hostname (if mouse over)
+        const infoPopupId = `info-${equipId}`;
         const equipLabelIdStr = `equipmentLabel-${equipId}`;
+        var urlTag;
+        if (eq.url) {
+            urlTag = x `<a target="_blank" href=${eq.url}>${eq.url}</a><br />`;
+        }
+        var errorTag;
+        if (errors.length) {
+            errorTag = x `
+        <div class="triggeredSensors">
+            <b>Triggering Sensors:</b>
+            <ul>
+            ${errors.map((err) => { return x `<li>${err}</li>`; })}
+            </ul>
+        </div>`;
+        }
+        var infoTag = x `
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${(e) => { this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId); }}  @mouseenter=${(e) => { this.infoMouseEnter(eq, infoPopupId); }}  style="top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
+        <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
+        ${urlTag} 
+        ${errorTag}
+    </div>`;
+        // Show the equipment hostname (if mouse over)
         var hostnameLabel = x `
-    	<div class="hostnameLabel" @mouseenter=${(e) => { this.hostnameLabelMouseEnter(eq, equipLabelIdStr, errorLabelIdStr); }} @mouseleave=${(e) => { this.hostnameLabelMouseLeave(eq, equipLabelIdStr, errorLabelIdStr); }} style="width: ${width_pixels}px; height: ${height_pixels}px; ">
+    	<div class="hostnameLabel" @mouseenter=${(e) => { this.hostnameLabelMouseEnter(eq, equipLabelIdStr, infoPopupId); }} @mouseleave=${(e) => { this.hostnameLabelMouseLeave(eq, equipLabelIdStr, infoPopupId); }} style="width: ${width_pixels}px; height: ${height_pixels}px; ">
     		<div id="${equipLabelIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div>
 	</div>`;
         return x `
-    	${errorLabel}
+    	${infoTag}
     	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; ">
 	   ${stateIndicator}
 	   ${hostnameLabel}
@@ -232,18 +245,28 @@ class RackerStacker extends s {
         }
         return badSensors;
     }
-    hostnameLabelMouseEnter(eq, equipIdStr, errorLabelIdStr) {
+    infoMouseEnter(eq, infoPopupId) {
+        this._infoPopup = infoPopupId;
+    }
+    hostnameLabelMouseEnter(eq, equipIdStr, infoPopupIdStr) {
         //console.log("Enter ",equipIdStr);
         this.shadowRoot.getElementById(equipIdStr).style.display = "block";
-        var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
-        if (eqErrors.length) {
-            this.shadowRoot.getElementById(errorLabelIdStr).style.display = "block";
-        }
+        this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+        this.shadowRoot.getElementById(infoPopupIdStr).style.display = "block";
     }
-    hostnameLabelMouseLeave(eq, equipIdStr, errorLabelIdStr) {
+    infoPopupMouseLeave(eq, equipIdStr, infoPopupIdStr) {
+        console.log("Leave info on ", eq.hostname);
+        this._infoPopup = null;
+        this.shadowRoot.getElementById(infoPopupIdStr).style.display = "none";
+    }
+    hostnameLabelMouseLeave(eq, equipIdStr, infoPopupIdStr) {
         //console.log("Leave ",equipIdStr);
-        this.shadowRoot.getElementById(equipIdStr).style.display = "none";
-        this.shadowRoot.getElementById(errorLabelIdStr).style.display = "none";
+        setTimeout(() => {
+            this.shadowRoot.getElementById(equipIdStr).style.display = "none";
+            if (this._infoPopup != infoPopupIdStr) {
+                this.shadowRoot.getElementById(infoPopupIdStr).style.display = "none";
+            }
+        }, 10);
     }
     rackHeader() {
         var _a;
@@ -362,7 +385,7 @@ RackerStacker.styles = i$2 `
 		color: white; 
 		font-size: 25px; 
 	}
-	.errorLabel {
+	.infoLabel {
         position: absolute;
 		border: 2px black solid;
 		border-radius: 12px;
@@ -371,9 +394,16 @@ RackerStacker.styles = i$2 `
 		padding: 10px;
 		display: none;
 	}
-	.errorLabel ul {
+    .equipmentTitle {
+        font-weight: 800;
+        font-size: 16px;
+    }
+	.infoLabel ul {
 		margin: 5px;
 	}
+    .triggeredSensors {
+        margin-top: 5px;
+    }
 	@keyframes blinker {
 	  50% {
 	    opacity: 0;

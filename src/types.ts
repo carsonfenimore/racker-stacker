@@ -3,6 +3,7 @@ interface EquipmentConfig{
   entity?: string;
   model: string;
   position_topu?: number;
+  url?: string;
 }
 
 
