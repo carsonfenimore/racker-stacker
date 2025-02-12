@@ -15,7 +15,7 @@ An example is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg
 # Equipment Models 
 
 In order to define your rack you must have a model for each equipment item. Models include images and metadata about the equipment.  The filenames for each equipment is based on its model name.  The models are placed inside the HA www directory under /racker-stacker/models/ as follows:
-  - Model metadata: <<modelname>>.json
+  - Model metadata: "[modelname].json"
   - Front image: "<modelname>_front.jpg"
   - Rear image: "<modelname>_rear.jpg"
 
