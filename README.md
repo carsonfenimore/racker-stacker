@@ -2,14 +2,14 @@
 
 This is a lovelace plugin for home assistant that allows you to monitor all the equipment in a rack.  Each equipment item in the rack is backed by a model. The model defines the dimensions of the equipment along with its from and rear images.  When you make a racker-stacker card with you name instances of these models, along with instance-specific sensors for tracking the health of each item.
 
-When all equipment is healthy it is shown without any red error boxes.  ![racker stacker no errors](![alt text](https://github.com/carsonfenimore/racker-stacker/blob/main/img/racker_stacker_no_errors.jpg?raw=true)
+When all equipment is healthy it is shown without any red error boxes.  [racker stacker no errors](img/racker_stacker_no_errors.jpg)
 
 If any equipment has an error:
   - that equipment pulses red
   - the rack containing the equipment pulses red
   - if you hover over the equipment it shows which sensor(s) are causing the error
 
-An example is shown here: ![racker stacker errors](![alt text](https://github.com/carsonfenimore/racker-stacker/blob/main/img/racker_stacker_errors.jpg?raw=true)
+An example is shown here: [racker stacker errors](img/racker_stacker_errors.jpg)
 
 
 # Equipment Models 
