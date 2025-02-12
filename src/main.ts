@@ -17,7 +17,7 @@ class RackerStacker extends LitElement {
   readonly _defaultRackHeight = 48;
   readonly _rackWidthInches = 19;
   readonly _pixelsRackWidthMax = 410.0;
-  readonly _rackAlarmBorderPixels = 16;
+  readonly _rackAlarmBorderPixels = 32;
 
   _models = new Map<string, RackerEquipmentModel>();
   _modelErrors = new Map<string, string>();
@@ -30,6 +30,12 @@ class RackerStacker extends LitElement {
 	@keyframes blinker {
 	  50% {
 	    opacity: 0;
+	  }
+	  100% {
+	    opacity: 0.5;
+	  }
+	  0% {
+	    opacity: 0.5;
 	  }
 	}
   `;
@@ -90,7 +96,7 @@ class RackerStacker extends LitElement {
     let height_pixels = Math.floor( model.rack_u * this._pixelsPerU );
     let img_type = model?.img_type ? model.img_type : "jpg";
     var model_image = `${this._urlRoot}/models/${eq.model}_${this._config?.facing ? this._config.facing : "front"}.${img_type}`;
-    let posu = 20+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
+    let posu = 55+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
     //console.log(`Pos for ${eq.hostname} is ${posu}`);
     var stateIndicator;
     if (eq.entity && this._hass){
@@ -98,14 +104,12 @@ class RackerStacker extends LitElement {
         var stateStr = state ? state.state : "unavailable";
         //console.log(`Entity ${eq.entity} has state ${stateStr}`);
 	var color;
-	if (stateStr === 'on'){
-		color = "rgba(0,255,0,0.5)";
-	} else {
-		// for now, only color FAILING equipment
-		color = "rgba(255,0,0,0.5)";
-		stateIndicator = html`
-		   <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
-		`;
+	if (stateStr === 'off'){
+           // for now, only color FAILING equipment
+           color = "rgba(255,0,0,0.7)";
+           stateIndicator = html`
+              <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
+           `;
 	}
     }
     return html`
@@ -116,17 +120,11 @@ class RackerStacker extends LitElement {
   }
 
   rackHeader(){
-	  var head;
-	  if (this._config.name){
-		  head = html` <div style="position: absolute; top: 0px; left 0px;">
-				  <div style="width:100%; height 120px;  text-align: center; margin-bottom: 5px;">
-				   <div style="width:460px; margin: 0 auto; 5px; padding: 10px; height 120px; border-radius: 10px; background-color: grey; color: rgb(80,80,80);">
-			             <span style="font-size: 20px; font-weight: 800;">${this._config.name}</span>
-			   	   </div>
-				</div>
-			     </div>`;
-	  }
-	  return head;
+	  var name = this._config?.name ? this._config.name : html`&nbsp;`;
+	  const headerHeight = 30;
+	  return html` <div style="  -webkit-text-stroke-width: 1px; -webkit-text-stroke-color: black; color: white; vertical-align: middle; font-size: 30px; font-weight: 800;width:460px; text-align: center; margin: 0 auto; 5px;margin-left: 0px;  padding: 10px; height ${headerHeight}px; line-height: ${headerHeight}px;  border-radius: 10px; background-color: grey; ">
+			     ${name }
+			   </div>`;
   }
 
   renderRackAlarm(){
@@ -141,10 +139,21 @@ class RackerStacker extends LitElement {
       var stateStr = state ? state.state : "unavailable";
       if (stateStr !== 'on'){
 	    return html`
-          	<div class="blink_me" style="position: absolute; margin: 0 auto; padding: 20px; padding-left: 35px; padding-right: 35px; width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; background-color: none; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); top: 0px;">
+          	<div class="blink_me" style="float: left; margin: 0 auto; padding: 20px; padding-left: 35px; margin-top: 15px; padding-right: 35px; width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; background-color: none; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); top: 60px;">
 		</div>`;
       }
     }
+  }
+
+  rackElLabel(racku) {
+    const indicatorWidth = 25;
+    const indicatorOffset = 5;
+    const indicatorOffsetRight = 7;
+    const indicatorVerticalOffset = 95;
+    return html`<div>
+    			<div style="position: absolute;  top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${this._rackU - racku}</div>
+    			<div style="position: absolute;  top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${this._rackU - racku}</div>
+		</div>`; 
   }
 
   render() {
@@ -153,17 +162,16 @@ class RackerStacker extends LitElement {
     	<div> 
 	  ${this.rackHeader()}
           
-          <div style="position: absolute; top: ${this._config?.name ? 60 : 0}px; left 0px;">
-          	<div style="margin: 0 auto; padding: 20px; padding-left: 35px; padding-right: 35px; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px; background-color: grey;">
+	  ${this.renderRackAlarm()}
+          <div style="margin: 0 auto; margin-left: 0px; margin-top: 15px; padding: 20px; padding-left: 35px; padding-right: 35px; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px; background-color: grey;">
           		${ Array.from({length: this._rackU}, (_, i) => i).map( (racku) => {
-          			return html`<div style="position: absolute;  top: ${20+(racku)*this._pixelsPerU}px; left: 5px; width: 25px; height: ${this._pixelsPerU}px; color: rgb(80,80,80); text-align: right; font-weight: 900; font-size: 20px;">${this._rackU - racku}</div>`; 
+          			return this.rackElLabel(racku);
           			}) }
           		${this._config.equipment.map( (eq) => {
           			return this.equipmentTemplate(eq);
           		})}
-          	</div>
-		${this.renderRackAlarm()}
           </div>
+
 
 	</div>`;
   }
