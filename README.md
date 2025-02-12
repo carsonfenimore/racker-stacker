@@ -16,8 +16,8 @@ An example is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg
 
 In order to define your rack you must have a model for each equipment item. Models include images and metadata about the equipment.  The filenames for each equipment is based on its model name.  The models are placed inside the HA www directory under /racker-stacker/models/ as follows:
   - Model metadata: "[modelname].json"
-  - Front image: "<modelname>_front.jpg"
-  - Rear image: "<modelname>_rear.jpg"
+  - Front image: "[modelname]_front.jpg"
+  - Rear image: "[modelname]_rear.jpg"
 
 Note that any image format is supported - but jpg is the default.
 
@@ -28,9 +28,7 @@ For each model the json can contain the following:
   - img_type (optional) - gives the image suffix of each equipment; if not provided defaults to "jpg"
 
 ## Images
-The front and rear images must be provided.  Images can be any resolution, although in practice a single u, full-width item will be 410x40px.  
-Thus it is recommended your image be no larger than 410 wide and some multiple of 40px, per rack U.  If the equipment is less than a full width, that is
-fine, just specify the width in inches in the model file.
+The front and rear images must be provided.  Images can be any resolution, although in practice a single u, full-width item will be 410x40px.  Thus it is recommended your image be no larger than 410 wide and some multiple of 40px, per rack U.  If the equipment is less than a full width, that is fine, just specify the width in inches in the model file.
 
 # Card parameters
 A racker-stacker card can specify a list of equipment in the following format:
