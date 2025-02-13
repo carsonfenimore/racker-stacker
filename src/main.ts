@@ -189,8 +189,17 @@ class RackerStacker extends LitElement {
     let width_pixels = Math.floor((model.width_inches / this._rackWidthInches) * this._pixelsRackWidthMax);
     let height_pixels = Math.floor( model.rack_u * this._pixelsPerU );
     let img_type = model?.img_type ? model.img_type : "jpg";
-    var model_image = `${this._urlRoot}/models/${eq.model}_${this._config?.facing ? this._config.facing : "front"}.${img_type}`;
+    var facing = this._config?.facing ? this._config.facing : "front";
+    if (eq.facing){
+        facing = eq.facing;
+    }
+    var model_image = `${this._urlRoot}/models/${eq.model}_${facing}.${img_type}`;
     let posu = 55+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
+    var posleft = 35;
+    if (eq.x_offset_inches){
+        const widthPixelsPerInch = this._pixelsRackWidthMax / this._rackWidthInches;
+        posleft += eq.x_offset_inches * widthPixelsPerInch;
+    }
     var stateIndicator;
     var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
 
@@ -232,16 +241,20 @@ class RackerStacker extends LitElement {
     		<div id="${equipLabelIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div>
 	</div>`;
     return html`
-    	${infoTag}
-    	<div style="position: absolute; top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; ">
-	   ${stateIndicator}
-	   ${hostnameLabel}
-	   <img src="${model_image}" alt style="${ stateIndicator ? 'filter: grayscale(1.0)' : ''}; display: block; width: ${width_pixels}px">
-	</div>`;
+    <div>
+       ${infoTag}
+       <div style="position: absolute;left: ${posleft}px;  top: ${posu}px; width: ${width_pixels}px; height: ${height_pixels}px; ">
+	      ${stateIndicator}
+	      ${hostnameLabel}
+	      <img src="${model_image}" alt style="${ stateIndicator ? 'filter: grayscale(1.0)' : ''}; display: block; width: ${width_pixels}px">
+	   </div>
+    </div>`;
   }
 
   // Handle a single entity or list of entities
   getEquipmentSensors(eq){
+    if (!eq.entity)
+        return [];
 	if (typeof(eq.entity) == "string"){
 		return [eq.entity];
 	}
@@ -250,6 +263,7 @@ class RackerStacker extends LitElement {
 
   // Prob this only works for binary sensors - but we could always extend the sensor list to include thresholds for non-binary
   getErroringSensors(sensors, hass){
+    // tODO: there is some bug right now where entity MUST be defined, else model fails...
     var badSensors = [];
     for (const sens of sensors){
 	    if (hass && hass.states[sens]){
@@ -270,7 +284,7 @@ class RackerStacker extends LitElement {
 
   hostnameLabelMouseEnter(eq, equipIdStr, infoPopupIdStr){
 	  //console.log("Enter ",equipIdStr);
-	  this.shadowRoot.getElementById(equipIdStr).style.display = "block";
+	  //this.shadowRoot.getElementById(equipIdStr).style.display = "block";
 	  var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
       this.shadowRoot.getElementById(infoPopupIdStr).style.display = "block";
   }

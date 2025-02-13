@@ -4,6 +4,8 @@ interface EquipmentConfig{
   model: string;
   position_topu?: number;
   url?: string;
+  facing?: string;  // defaults to whatever the "rRackerConfig" is - "front" (default) or "rear"
+  x_offset_inches?: number; // how far from the left, in inches; defaults to 0
 }
 
 
