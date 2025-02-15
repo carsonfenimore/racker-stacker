@@ -2,13 +2,17 @@ import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
 import pjson from "../package.json";
 import {RackerConfig,
+        RackInstance,
         RackerEquipmentModel} from "./types";
+import { parse as yamlParse } from "yaml";
+
 
 
 const ALARM_FLASH_CYCLE_SECONDS = 3;
 
 class RackerStacker extends LitElement {
   @property() _config: RackerConfig;
+  @property() _rack: RackInstance;
   @property() _hass: any;
   @property() _rackU: number;
 
@@ -21,6 +25,7 @@ class RackerStacker extends LitElement {
 
   _models = new Map<string, RackerEquipmentModel>();
   _modelErrors = new Map<string, string>();
+  _rackError = null;
   _entityStates = new Map<string, string>(); // entity_id -> state
   _equipId = 0;
   _infoPopup = null;
@@ -127,7 +132,7 @@ class RackerStacker extends LitElement {
   static getStubConfig() {
     return {
       name: "Rack 1",
-      equipment: [],
+      rack: "rack-model-1",
     };
   }
 
@@ -136,21 +141,41 @@ class RackerStacker extends LitElement {
     this.requestUpdate();
   }
 
-  setConfig(config: RackerConfig) {
+  setConfig(config: RackInstance) {
     if (!config) {
-      throw new Error("No configuration.");
+      throw new Error("No rack configuration given.");
     }
-    config = JSON.parse(JSON.stringify(config));
-    this._config = config;
+    this._rack = config;
+    this.requestRackConfig();
+  }
 
-    this._rackU = config?.rack_height ? config?.rack_height : this._defaultRackHeight;
+  periodicRackRequest() {
+    window.setTimeout( () => {this.requestRackConfig();}, 1000 );
+  }
+
+  async requestRackConfig() {
+    console.log(`Looking up remote definition of model ${this._rack.rack}`);
+    let url = `${this._urlRoot}/racks/${this._rack.rack}.yaml`;
+    let resp = await fetch(url, {cache: "no-cache"});
+    if (!resp.ok){
+	    this._rackError = "Failed to fetch rack";
+	    console.log(this._rackError);
+    } else {
+        this._config = yamlParse( await resp.text() ) as RackerConfig;
+        this.initRackConfig();
+    }
+    this.periodicRackRequest();
+  }
+
+  initRackConfig(){
+    this._rackU = this._config?.rack_height ? this._config?.rack_height : this._defaultRackHeight;
   }
 
   async requestModel(model){
     // We store models inside /local/racker-stacker/models. Each model
     // defines some common attributes for all instances of this model.  The images are
     // not stored inside the model, but alongside it 
-    let url = `${this._urlRoot}/models/${model}.json`;
+    let url = `${this._urlRoot}/models/${model}.yaml`;
     let resp = await fetch(url);
     if (!resp.ok){
 	    console.log(`Failed to get model descriptor from ${url}`);
@@ -158,7 +183,8 @@ class RackerStacker extends LitElement {
 	    this.requestUpdate();
 	    return;
     }
-    let data: RackerEquipmentModel = await resp.json();
+    let data = yamlParse( await resp.text() ) as RackerEquipmentModel;
+
     this._models.set(model, data);
     //console.log(`Got json for ${model}: ${this._models.get(model)}`);
     // TODO: only request update if no more pending
@@ -192,6 +218,15 @@ class RackerStacker extends LitElement {
     var facing = this._config?.facing ? this._config.facing : "front";
     if (eq.facing){
         facing = eq.facing;
+    }
+    // we allow a rack to be flipped from its definition, allowing one define the rack once, 
+    // and show front or rear views in the card (rather than the rack model)
+    const flip = this._rack?.flip ? this._rack.flip : false;
+    if (flip) {
+        if (facing == "front")
+            facing = "rear";
+        else
+            facing = "front";
     }
     var model_image = `${this._urlRoot}/models/${eq.model}_${facing}.${img_type}`;
     let posu = 55+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
@@ -309,14 +344,14 @@ class RackerStacker extends LitElement {
   rackHeader(){
 	  const headerHeight = 30;
 
-	  var name = this._config?.name ? this._config.name : html`&nbsp;`;
+	  var name = this._rack?.name ? this._rack.name : html`&nbsp;`;
 	  return html` <div class="rackHeader" style="height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name }
 			   </div>`;
   }
 
   renderRackAlarm(){
-    if (!this._hass)
+    if (!this._hass || !this._config)
       return;
 
     for (const eq of this._config.equipment){
@@ -342,6 +377,9 @@ class RackerStacker extends LitElement {
 
   render() {
     this._equipId = 0;
+    if (!this._config){
+        return html`<div>Loading...</div>`;
+    }
     return html`
     	<div> 
 	      ${this.rackHeader()}
