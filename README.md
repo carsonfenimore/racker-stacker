@@ -34,6 +34,7 @@ equipment:
     entity: binary_sensor.switch-1-1-rollup 
     model: cisco_3890U
     rack_u: 48
+    url: "https://netapp-1-1"
   - hostname: server-1-1
     entity: 
       - binary_sensor.server-1-1-raid-integrity = 'on'
@@ -43,6 +44,10 @@ equipment:
   ... 
 ```
 
+A few notes:
+  - The url is optional - but provides a link to visit the equipments 
+  - Normally equipment assumes the orientation of the rack - but you can flip individual items by adding "facing" to each equipment and setting it to "rear" or "front"
+  - 
 
 # Equipment Models 
 

@@ -254,7 +254,7 @@ class RackerStacker extends LitElement {
             facing = "front";
     }
     var model_image = `${this._urlRoot}/models/${eq.model}_${facing}.${img_type}`;
-    let posu = 55+Math.floor(this._rackU - eq.position_topu )*this._pixelsPerU;
+    let posu = 55+Math.floor(this._rackU - eq.position_topu + 1)*this._pixelsPerU;
     var posleft = 35;
     if (eq.x_offset_inches){
         const widthPixelsPerInch = this._pixelsRackWidthMax / this._rackWidthInches;
