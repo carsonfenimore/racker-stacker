@@ -64,7 +64,7 @@ The front and rear images must both be provided.  Images can be any resolution, 
 
 
 ## Entities and Thresholds
-In the example shown above each item can have an "entity" attribute containing one or more expressions.  The expression is of the form [entityName] [op] [threshold].  The entity can be any entity in HA.  The op can be one of >, >=, <, <=, =, or !=.  The types of the entity must match those of the threshold - in other words, both must be numbers or both must be strings.  
+In the example shown above each item can have an "entity" attribute containing one or more expressions.  The expression is of the form [entityName] [op] [threshold].  The entity can be any entity in HA.  The op can be one of >, >=, <, <=, =, or !=.  The types of the entity must match those of the threshold - in other words, both must be numbers or both must be strings.   If the ha state is a string, the threshold must be surrounded with single quotes.
 
 
 
