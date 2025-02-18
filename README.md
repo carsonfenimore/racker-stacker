@@ -22,6 +22,7 @@ If any equipment has an error the view is rendered differently.  In this case:
 
 An example rack with bad equipment is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
 
+
 # Rack Models
 Rack models are yaml files. They must be placed in "www/racker-stacker/racks/[rackname].yaml" inside the HA install dir. Note that [rackname] can then be referenced in the card as shown above.   The format is:
 
