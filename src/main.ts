@@ -154,7 +154,7 @@ class RackerStacker extends LitElement {
   }
 
   async requestRackConfig() {
-    console.log(`Looking up remote definition of model ${this._rack.rack}`);
+    //console.log(`Looking up remote definition of model ${this._rack.rack}`);
     let url = `${this._urlRoot}/racks/${this._rack.rack}.yaml`;
     let resp = await fetch(url, {cache: "no-cache"});
     if (!resp.ok){
@@ -190,6 +190,31 @@ class RackerStacker extends LitElement {
     // TODO: only request update if no more pending
     this.requestUpdate();
   }
+
+  renderSensorList(sensors){
+    var guts = sensors.map( (err) => {  
+        if (err.error){
+            return html`<li>${err.entity}: ${err.error}</li>`;
+        } else {
+            return html`<li>${err.entity}: good if ${err.op} ${err.thresh}, currently ${err.value}</li>`;
+        } } );
+    return html`<ul>${guts}</ul>`;
+  }
+
+  renderSensorBlock(sensors, label, divClass){
+    var errorGuts;
+    if (sensors.length){
+        errorGuts = this.renderSensorList(sensors);
+    } else {
+        errorGuts = html`<div>(None)</div>`;
+    }
+    return html`
+        <div class="${divClass}">
+            <b>${label}:</b>
+            ${errorGuts}
+        </div>`;
+  }
+
   
   equipmentTemplate(eq){	
     const lineHeight = 35;
@@ -236,10 +261,11 @@ class RackerStacker extends LitElement {
         posleft += eq.x_offset_inches * widthPixelsPerInch;
     }
     var stateIndicator;
-    var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
+    //console.log(`On EQ ${eq.hostname}`);
+    var sensors = this.evaluateSensors(this.getEquipmentSensors(eq), this._hass);
 
     // for now, only color FAILING equipment
-    if (errors.length){
+    if (sensors.bad.length){
       const color = "rgba(255,0,0,0.7)";
       stateIndicator = html`
 	      <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
@@ -253,21 +279,17 @@ class RackerStacker extends LitElement {
     if (eq.url){
         urlTag = html`<a target="_blank" href=${eq.url}>${eq.url}</a><br />`;
     }
-    var errorTag;
-    if (errors.length){
-        errorTag = html`
-        <div class="triggeredSensors">
-            <b>Triggering Sensors:</b>
-            <ul>
-            ${errors.map( (err) => { return html`<li>${err}</li>`;})}
-            </ul>
-        </div>`;
-    }
+
+    // list all bad sensors first
+    var triggeredSensors = this.renderSensorBlock(sensors.bad, "Triggered Sensors", "triggeredSensors");
+    var goodSensors = this.renderSensorBlock(sensors.good, "Nominal Sensors", "nominalSensors");
+        
     var infoTag = html`
     <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
         <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
         ${urlTag} 
-        ${errorTag}
+        ${triggeredSensors}
+        ${goodSensors}
     </div>`;
 
     // Show the equipment hostname (if mouse over)
@@ -286,7 +308,7 @@ class RackerStacker extends LitElement {
     </div>`;
   }
 
-  // Handle a single entity or list of entities
+  // Equipment can specify "entity" with a single item or a list - this handles either returning a list
   getEquipmentSensors(eq){
     if (!eq.entity)
         return [];
@@ -296,20 +318,110 @@ class RackerStacker extends LitElement {
 	return eq.entity;
   }    
 
-  // Prob this only works for binary sensors - but we could always extend the sensor list to include thresholds for non-binary
-  getErroringSensors(sensors, hass){
+  // Each entity is an expression: 'entity' <op> <threshold>
+  // We want to determine how many sensors are erroring, and also display, to show alarms
+  // We also want to show which sensors are erroring, or not, along with their threshold and current values
+  // So maybe we return two maps: one error and one good. Each has items with the sensor name, threshold, and value
+  evaluateSensors(sensors, hass){
     // tODO: there is some bug right now where entity MUST be defined, else model fails...
     var badSensors = [];
-    for (const sens of sensors){
-	    if (hass && hass.states[sens]){
-		    if (hass.states[sens].state === 'off'){
-			    badSensors.push(sens);
-		    } else {
-			    //console.log("State of ", sens, " is ", hass.states[sens]);
-		    }
-	    }
+    var goodSensors = [];
+    if (hass) {
+        for (const sens of sensors){
+            const tokens: string[] = sens.split(" ");
+            var out = {error:null,entity:null,op:null,thresh:null,value:null};
+            if (tokens.length != 3){
+                out.entity = sens;
+                out.error = "Incorrect format! Should be: <entity> <operator> <threshold>";
+                badSensors.push( out );
+            } else {
+                out.entity = tokens[0];
+                out.op = tokens[1];
+                const haValue = hass.states[out.entity];
+                if (!haValue){
+                    out.error = "HA didn't provide current value! Sounds like an HA bug."
+                    badSensors.push(out);
+                    continue;
+                } 
+                out.thresh = this.parseThresh(tokens[2]);
+                if (!out.thresh) {
+                    out.error = `Your threshold value of "${tokens[2]}" couldn't be parsed - did you flub it?`;
+                    badSensors.push(out);
+                    continue;
+                } 
+                out.value = this.parseState(haValue.state);
+                if (typeof out.value != typeof out.thresh) {
+                    out.error = `Your threshold is a ${typeof out.thresh} but your state is a ${typeof out.value} - comparing them seems bogus`;
+                    badSensors.push(out);
+                    continue;
+                } 
+                const compareVal = this.compareOp(out.value, out.op, out.thresh);
+                if (compareVal == null){
+                    out.error = "Invalid operator; gave ${out.op}, but supported ops are: <, <=, >, >=, =, !=";
+                    badSensors.push(out);
+                } else {
+                    if (compareVal)
+                        goodSensors.push(out);
+                    else {
+                        badSensors.push(out);
+                    }
+                }
+            }
+        }
     }
-    return badSensors;
+    return {good: goodSensors, bad: badSensors};
+  }
+
+  parseThresh(thresh){
+    if (thresh.charAt(0) == "'") {
+        if (thresh.charAt(thresh.length-1) != "'")
+            return null;
+        // string
+        return thresh.slice(1, thresh.length-1);
+    } 
+    // number - float if has ., otherwise int
+    return this.parseNum(thresh);
+  }
+
+  parseNum(val){
+    try {
+        if (val.indexOf('.') != -1){
+            val = parseFloat(val);
+        } else {
+            val = parseInt(val);
+        }
+        if (isNaN(val)){
+            return null;
+        }
+        return val;
+    } catch (error) {
+            return null;
+    }
+  }
+
+  parseState(state){
+    var tryNum = this.parseNum(state);
+    if (tryNum == null){
+        return state; // string
+    }
+    return tryNum;
+  }
+
+  compareOp(val, op, thresh){
+    if (op == '='){
+        return val == thresh;
+    } else if (op == '<') {
+        return val < thresh;
+    } else if (op == '<=') {
+        return val <= thresh;
+    } else if (op == '>') {
+        return val > thresh;
+    } else if (op == '>=') {
+        return val >= thresh;
+    } else if (op == '!=') {
+        return val != thresh;
+    } 
+    return null;
   }
 
 
@@ -317,10 +429,13 @@ class RackerStacker extends LitElement {
     this._infoPopup = infoPopupId;
   }
 
+  countEquipmentErrors(eq, hass) {
+	  return this.evaluateSensors(this.getEquipmentSensors(eq), hass).bad.length;
+  }
+
   hostnameLabelMouseEnter(eq, equipIdStr, infoPopupIdStr){
 	  //console.log("Enter ",equipIdStr);
 	  //this.shadowRoot.getElementById(equipIdStr).style.display = "block";
-	  var eqErrors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
       this.shadowRoot.getElementById(infoPopupIdStr).style.display = "block";
   }
 
@@ -355,8 +470,7 @@ class RackerStacker extends LitElement {
       return;
 
     for (const eq of this._config.equipment){
-      var errors = this.getErroringSensors(this.getEquipmentSensors(eq), this._hass);
-      if (errors.length){
+      if (this.countEquipmentErrors(eq, this._hass)){
 	    return html`
           	<div class="blink_me rackError" style=" width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
 		</div>`;
