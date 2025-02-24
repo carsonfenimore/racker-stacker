@@ -285,7 +285,7 @@ class RackerStacker extends LitElement {
     var goodSensors = this.renderSensorBlock(sensors.good, "Nominal Sensors", "nominalSensors");
         
     var infoTag = html`
-    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; min-width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
         <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
         ${urlTag} 
         ${triggeredSensors}
