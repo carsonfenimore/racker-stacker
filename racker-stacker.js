@@ -7014,7 +7014,7 @@ class RackerStacker extends s {
         // defines some common attributes for all instances of this model.  The images are
         // not stored inside the model, but alongside it 
         let url = `${this._urlRoot}/models/${model}.yaml`;
-        let resp = await fetch(url);
+        let resp = await fetch(url, { cache: "no-cache" });
         if (!resp.ok) {
             console.log(`Failed to get model descriptor from ${url}`);
             this._modelErrors.set(model, `Failed to load ${url}`);
@@ -7116,7 +7116,7 @@ class RackerStacker extends s {
         var triggeredSensors = this.renderSensorBlock(sensors.bad, "Triggered Sensors", "triggeredSensors");
         var goodSensors = this.renderSensorBlock(sensors.good, "Nominal Sensors", "nominalSensors");
         var infoTag = x `
-    <div id=${infoPopupId} class="infoLabel" @mouseleave=${(e) => { this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId); }}  @mouseenter=${(e) => { this.infoMouseEnter(eq, infoPopupId); }}  style="top: ${posu}px; width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${(e) => { this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId); }}  @mouseenter=${(e) => { this.infoMouseEnter(eq, infoPopupId); }}  style="top: ${posu}px; min-width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
         <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
         ${urlTag} 
         ${triggeredSensors}
@@ -7154,27 +7154,29 @@ class RackerStacker extends s {
         // tODO: there is some bug right now where entity MUST be defined, else model fails...
         var badSensors = [];
         var goodSensors = [];
+        const tokRegex = /(?<entity>.+)\s+(?<token>=|<|<=|>|>=|!=)\s+(?<thresh>.+)/;
         if (hass) {
             for (const sens of sensors) {
-                const tokens = sens.split(" ");
+                // The format is actually <entity_no_spaces> <operator> .+
                 var out = { error: null, entity: null, op: null, thresh: null, value: null };
-                if (tokens.length != 3) {
+                const match = sens.match(tokRegex);
+                if (!match) {
                     out.entity = sens;
                     out.error = "Incorrect format! Should be: <entity> <operator> <threshold>";
                     badSensors.push(out);
                 }
                 else {
-                    out.entity = tokens[0];
-                    out.op = tokens[1];
+                    out.entity = match.groups.entity;
+                    out.op = match.groups.token;
                     const haValue = hass.states[out.entity];
                     if (!haValue) {
                         out.error = "HA didn't provide current value! Sounds like an HA bug.";
                         badSensors.push(out);
                         continue;
                     }
-                    out.thresh = this.parseThresh(tokens[2]);
+                    out.thresh = this.parseThresh(match.groups.thresh);
                     if (!out.thresh) {
-                        out.error = `Your threshold value of "${tokens[2]}" couldn't be parsed - did you flub it?`;
+                        out.error = `Your threshold value of "${match.groups.thresh}" couldn't be parsed - did you flub it?`;
                         badSensors.push(out);
                         continue;
                     }
@@ -7305,9 +7307,10 @@ class RackerStacker extends s {
         const indicatorOffset = 5;
         const indicatorOffsetRight = 7;
         const indicatorVerticalOffset = 95;
+        const topPix = indicatorVerticalOffset + (racku) * this._pixelsPerU + this._pixelsPerU / 4.0;
         return x `<div>
-    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset + (racku) * this._pixelsPerU}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
-    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset + (racku) * this._pixelsPerU}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
 		</div>`;
     }
     render() {

@@ -176,7 +176,7 @@ class RackerStacker extends LitElement {
     // defines some common attributes for all instances of this model.  The images are
     // not stored inside the model, but alongside it 
     let url = `${this._urlRoot}/models/${model}.yaml`;
-    let resp = await fetch(url);
+    let resp = await fetch(url, {cache: "no-cache"});
     if (!resp.ok){
 	    console.log(`Failed to get model descriptor from ${url}`);
 	    this._modelErrors.set(model, `Failed to load ${url}`);
