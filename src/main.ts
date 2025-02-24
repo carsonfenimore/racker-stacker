@@ -326,26 +326,28 @@ class RackerStacker extends LitElement {
     // tODO: there is some bug right now where entity MUST be defined, else model fails...
     var badSensors = [];
     var goodSensors = [];
+    const tokRegex = /(?<entity>.+)\s+(?<token>=|<|<=|>|>=|!=)\s+(?<thresh>.+)/;
     if (hass) {
         for (const sens of sensors){
-            const tokens: string[] = sens.split(" ");
+            // The format is actually <entity_no_spaces> <operator> .+
             var out = {error:null,entity:null,op:null,thresh:null,value:null};
-            if (tokens.length != 3){
+            const match = sens.match(tokRegex);
+            if (!match){
                 out.entity = sens;
                 out.error = "Incorrect format! Should be: <entity> <operator> <threshold>";
                 badSensors.push( out );
             } else {
-                out.entity = tokens[0];
-                out.op = tokens[1];
+                out.entity = match.groups.entity;
+                out.op = match.groups.token;
                 const haValue = hass.states[out.entity];
                 if (!haValue){
                     out.error = "HA didn't provide current value! Sounds like an HA bug."
                     badSensors.push(out);
                     continue;
                 } 
-                out.thresh = this.parseThresh(tokens[2]);
+                out.thresh = this.parseThresh(match.groups.thresh);
                 if (!out.thresh) {
-                    out.error = `Your threshold value of "${tokens[2]}" couldn't be parsed - did you flub it?`;
+                    out.error = `Your threshold value of "${match.groups.thresh}" couldn't be parsed - did you flub it?`;
                     badSensors.push(out);
                     continue;
                 } 
