@@ -485,9 +485,10 @@ class RackerStacker extends LitElement {
     const indicatorOffset = 5;
     const indicatorOffsetRight = 7;
     const indicatorVerticalOffset = 95;
+    const topPix = indicatorVerticalOffset+(racku)*this._pixelsPerU + this._pixelsPerU/4.0;
     return html`<div>
-    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
-    			<div class="rackElIndicator" style="top: ${indicatorVerticalOffset+(racku)*this._pixelsPerU}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
+    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
 		</div>`; 
   }
 
