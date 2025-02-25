@@ -2,7 +2,7 @@
 
 This is a lovelace plugin for home assistant that allows you to monitor racked equipment.  
 
-# Installtion
+# Installation
 In order to use this plugin you need to install the 'racker-stacker.js' inside the 'www/racker-stacker/' in HA. There must also be 'racks' and 'models' subdirs inside the 'racker-stacker' directory.
 
 # Card Creation
@@ -17,19 +17,19 @@ rack: rack41
 
 This produces something like the following: ![racker stacker no errors](img/racker_stacker_no_errors.jpg)
 
-If any equipment has an error the view is rendered differently.  In this case:
-  - the bad equipment pulses red
-  - the rack containing the bad equipment also pulses red
+Each equipment can track any number of sensors.  If any of these sensors are bad the following occurs in order to alert you:
+  - the "bad" equipment pulses red
+  - the rack containing the "bad" equipment also pulses red
   - if you hover over the bad equipment it will show sensor(s) are causing the error
 
-An example rack with bad equipment is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
+An example of this is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
 
 ## Other Card Options
-You can also specify scrolling of the card, which allows you to focus the view on a certain rack elevation: scrollx, scrolly each scroll to the specified pixel offset.
+You can also specify an initial scroll offset which is useful if you want to focus on a specific section of the racks on load.  Just add "scrollx" and/or "scrolly" attributes to the card.
 
 
 # Rack Models
-Rack models are yaml files. They must be placed in "www/racker-stacker/racks/[rackname].yaml" inside the HA install dir. Note that [rackname] can then be referenced in the card as shown above.   An example rack is shown below:
+Rack models are yaml files placed in "www/racker-stacker/racks/[rackname].yaml" relative to the HA configuration dir. Once the yaml is created, a card can reference [rackname] can as shown above. Rack models are refreshed, without caching, once per second.   An example rack is shown below:
 
 ```yaml
 facing: "rear" # optional; defaults to "front"
@@ -48,6 +48,11 @@ equipment:
     model: dell_r7625
   ... 
 ```
+
+## Entities and Thresholds
+In the example shown above each instance of a model can have an "entity" attribute containing one or more sensor expressions.  The sensor expression is of the form [entityName] [op] [threshold].  The entity can be any entity in HA.  The op can be one of >, >=, <, <=, =, or !=.  The types of the entity must match those of the threshold - in other words, both must be numbers or both must be strings.   If the ha state is a string, the threshold must be surrounded with single quotes.
+
+
 
 A few notes:
   - url is optional - if provided, a corresponding link will be shown as you hover over the equipment
@@ -70,10 +75,6 @@ Each model's metadata is a yaml containing the following:
 
 ## Model Images
 The front and rear images must both be provided.  Images can be any resolution, although in practice a single u, full-width item will be 410x40px.  Thus it is recommended your image be no larger than 410 wide and some multiple of 40px, per rack U.  If the equipment is less than a full width, that is fine, just specify the width in inches in the model file.
-
-
-## Entities and Thresholds
-In the example shown above each item can have an "entity" attribute containing one or more expressions.  The expression is of the form [entityName] [op] [threshold].  The entity can be any entity in HA.  The op can be one of >, >=, <, <=, =, or !=.  The types of the entity must match those of the threshold - in other words, both must be numbers or both must be strings.   If the ha state is a string, the threshold must be surrounded with single quotes.
 
 
 
