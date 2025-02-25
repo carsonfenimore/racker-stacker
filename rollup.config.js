@@ -19,6 +19,9 @@ export default {
     babel({
       exclude: "node_modules/**",
     }),
-    !dev && terser({ format: { comments: false } }),
+    !dev && terser({ 
+            format: { comments: false } ,
+            compress: { toplevel: true }
+        }),
   ],
 };
