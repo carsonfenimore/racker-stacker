@@ -1,9 +1,9 @@
 {
   "name": "racker",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.4",
   "type": "module",
-  "description": "",
+  "description": "A home assistant card for modelling and monitoring racks of equipment",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch"

@@ -443,7 +443,7 @@ class RackerStacker extends LitElement {
   }
 
   infoPopupMouseLeave(eq, equipIdStr, infoPopupIdStr){
-	  console.log("Leave info on ",eq.hostname);
+	  //console.log("Leave info on ",eq.hostname);
       this._infoPopup = null;
       this.shadowRoot.getElementById(infoPopupIdStr).style.display = "none";
   }
@@ -505,7 +505,7 @@ class RackerStacker extends LitElement {
         scrolly = this._rack.scrolly;
     }
     window.top.scroll(scrollx, scrolly);
-    console.log(`Scrolled ${scrollx}, ${scrolly}`);
+    //console.log(`Scrolled ${scrollx}, ${scrolly}`);
   }
 
   render() {
