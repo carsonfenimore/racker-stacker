@@ -6970,6 +6970,7 @@ class RackerStacker extends s {
         this._entityStates = new Map(); // entity_id -> state
         this._equipId = 0;
         this._infoPopup = null;
+        this._scrollInited = false;
     }
     static getStubConfig() {
         return {
@@ -7313,10 +7314,28 @@ class RackerStacker extends s {
     			<div class="rackElIndicator" style="top: ${topPix}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
 		</div>`;
     }
+    initScroll() {
+        if (!this._rack.scrollx && !this._rack.scrolly)
+            return;
+        var scrollx = 0;
+        if (this._rack.scrollx) {
+            scrollx = this._rack.scrollx;
+        }
+        var scrolly = 0;
+        if (this._rack.scrolly) {
+            scrolly = this._rack.scrolly;
+        }
+        window.top.scroll(scrollx, scrolly);
+        console.log(`Scrolled ${scrollx}, ${scrolly}`);
+    }
     render() {
         this._equipId = 0;
         if (!this._config) {
             return x `<div>Loading...</div>`;
+        }
+        if (!this._scrollInited) {
+            this._scrollInited = true;
+            window.setTimeout(() => { this.initScroll(); }, 100);
         }
         return x `
     	<div> 

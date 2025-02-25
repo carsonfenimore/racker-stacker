@@ -28,5 +28,7 @@ export interface RackerConfig {
 export interface RackInstance {
   name?: string;
   rack: string;
-  flip: boolean;
+  flip?: boolean;
+  scrollx?: number;
+  scrolly?: number;
 }

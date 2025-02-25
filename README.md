@@ -2,8 +2,10 @@
 
 This is a lovelace plugin for home assistant that allows you to monitor racked equipment.  
 
+# Installtion
 In order to use this plugin you need to install the 'racker-stacker.js' inside the 'www/racker-stacker/' in HA. There must also be 'racks' and 'models' subdirs inside the 'racker-stacker' directory.
 
+# Card Creation
 Once you have populated all the rack and equipment yamls you can use them on a card as follows:
 
 ```yaml
@@ -22,9 +24,12 @@ If any equipment has an error the view is rendered differently.  In this case:
 
 An example rack with bad equipment is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
 
+## Other Card Options
+You can also specify scrolling of the card, which allows you to focus the view on a certain rack elevation: scrollx, scrolly each scroll to the specified pixel offset.
+
 
 # Rack Models
-Rack models are yaml files. They must be placed in "www/racker-stacker/racks/[rackname].yaml" inside the HA install dir. Note that [rackname] can then be referenced in the card as shown above.   The format is:
+Rack models are yaml files. They must be placed in "www/racker-stacker/racks/[rackname].yaml" inside the HA install dir. Note that [rackname] can then be referenced in the card as shown above.   An example rack is shown below:
 
 ```yaml
 facing: "rear" # optional; defaults to "front"
@@ -45,9 +50,8 @@ equipment:
 ```
 
 A few notes:
-  - The url is optional - but provides a link to visit the equipments 
-  - Normally equipment assumes the orientation of the rack - but you can flip individual items by adding "facing" to each equipment and setting it to "rear" or "front"
-  - 
+  - url is optional - if provided, a corresponding link will be shown as you hover over the equipment
+  - Equipment orientation is inherited from the rack - however you can override this on individual items by adding a "facing" property (acceptable values are "rear" or "front")
 
 # Equipment Models 
 

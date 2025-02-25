@@ -29,6 +29,7 @@ class RackerStacker extends LitElement {
   _entityStates = new Map<string, string>(); // entity_id -> state
   _equipId = 0;
   _infoPopup = null;
+  _scrollInited = false;
 
   static styles = css`
 	.blink_me {
@@ -492,10 +493,30 @@ class RackerStacker extends LitElement {
 		</div>`; 
   }
 
+  initScroll(){
+    if (!this._rack.scrollx && !this._rack.scrolly)
+        return;
+    var scrollx = 0;
+    if (this._rack.scrollx){
+        scrollx = this._rack.scrollx;
+    }
+    var scrolly = 0;
+    if (this._rack.scrolly){
+        scrolly = this._rack.scrolly;
+    }
+    window.top.scroll(scrollx, scrolly);
+    console.log(`Scrolled ${scrollx}, ${scrolly}`);
+  }
+
   render() {
     this._equipId = 0;
     if (!this._config){
         return html`<div>Loading...</div>`;
+    }
+    
+    if (!this._scrollInited){
+        this._scrollInited = true;
+        window.setTimeout( () => {this.initScroll()}, 100 );
     }
     return html`
     	<div> 
