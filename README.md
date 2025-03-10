@@ -87,3 +87,4 @@ We're tracking the following future work items:
   - multiple racks - Right now this card works really well for one or two racks.  More than that and you have some UI problems arise - namely, how to show everything? Need to look into panel mode, and see if we can get some better horizontal space.  Needless to say right now this isn't meant for modelling [Colossus](https://www.supermicro.com/CaseStudies/Success_Story_xAI_Colossus_Cluster.pdf)
   - ACK pulsing red - if you see something going wrong, but cannot fix it immediately, you might want to stop the pulsing for that equipment; we might add an "ACK" state to let you suppress the pulsing
 
+
