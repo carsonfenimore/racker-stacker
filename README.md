@@ -15,14 +15,14 @@ flip: false
 rack: rack41
 ```
 
-This produces something like the following: ![racker stacker no errors](img/racker_stacker_no_errors.jpg)
+This produces something like the following: ![state with no errors](img/racker_stacker_no_errors.jpg)
 
 Each equipment can track any number of sensors.  If any of these sensors are bad the following occurs in order to alert you:
   - the "bad" equipment pulses red
   - the rack containing the "bad" equipment also pulses red
   - if you hover over the bad equipment it will show sensor(s) are causing the error
 
-An example of this is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
+An example of this is shown here: ![state with errors](img/racker_stacker_errors.jpg)
 
 # Dark Mode
 We also support dark mode: ![dark mode](img/racker_dark.jpg)
