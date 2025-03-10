@@ -24,6 +24,9 @@ Each equipment can track any number of sensors.  If any of these sensors are bad
 
 An example of this is shown here: ![racker stacker errors](img/racker_stacker_errors.jpg)
 
+# Dark Mode
+We also support dark mode: ![dark mode](img/racker_dark.jpg)
+
 
 ## Other Card Options
 You can also specify an initial scroll offset which is useful if you want to focus on a specific section of the racks on load.  Just add "scrollx" and/or "scrolly" attributes to the card.

@@ -67,7 +67,7 @@ const i=(i,e)=>"method"===e.kind&&e.descriptor&&!("value"in e.descriptor)?{...e,
  */var n;null!=(null===(n=window.HTMLSlotElement)||void 0===n?void 0:n.prototype.assignedElements)?(o,n)=>o.assignedElements(n):(o,n)=>o.assignedNodes(n).filter((o=>o.nodeType===Node.ELEMENT_NODE));
 
 var name = "racker";
-var version = "1.0.4";
+var version = "1.0.5";
 var type = "module";
 var description = "A home assistant card for modelling and monitoring racks of equipment";
 var scripts = {
@@ -7090,7 +7090,8 @@ class RackerStacker extends s {
                 facing = "front";
         }
         var model_image = `${this._urlRoot}/models/${eq.model}_${facing}.${img_type}`;
-        let posu = 55 + Math.floor(this._rackU - eq.position_topu + 1) * this._pixelsPerU;
+        const header_offset = 5; // was 55
+        let posu = header_offset + Math.floor(this._rackU - eq.position_topu + 1) * this._pixelsPerU;
         var posleft = 35;
         if (eq.x_offset_inches) {
             const widthPixelsPerInch = this._pixelsRackWidthMax / this._rackWidthInches;
@@ -7311,7 +7312,7 @@ class RackerStacker extends s {
         for (const eq of this._config.equipment) {
             if (this.countEquipmentErrors(eq, this._hass)) {
                 return x `
-          	<div class="blink_me rackError" style=" width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels * 2}px; height: ${this._rackU * this._pixelsPerU - this._rackAlarmBorderPixels * 2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
+          	<div class="blink_me rackError" style="width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels * 2}px; height: ${this._rackU * this._pixelsPerU - this._rackAlarmBorderPixels * 2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
 		</div>`;
             }
         }
@@ -7320,7 +7321,7 @@ class RackerStacker extends s {
         const indicatorWidth = 25;
         const indicatorOffset = 5;
         const indicatorOffsetRight = 7;
-        const indicatorVerticalOffset = 95;
+        const indicatorVerticalOffset = 45; // was 95;
         const topPix = indicatorVerticalOffset + (racku) * this._pixelsPerU + this._pixelsPerU / 4.0;
         return x `<div>
     			<div class="rackElIndicator" style="top: ${topPix}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
@@ -7351,8 +7352,10 @@ class RackerStacker extends s {
             window.setTimeout(() => { this.initScroll(); }, 100);
         }
         return x `
-    	<div> 
+    	<div style="position: absolute">
 	      ${this.rackHeader()}
+
+    	<div style="position: absolute; top: 55px;">
 	      ${this.renderRackAlarm()}
 
           <div class="rack" style="background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU * this._pixelsPerU}px;">
@@ -7362,6 +7365,7 @@ class RackerStacker extends s {
           		${this._config.equipment.map((eq) => {
             return this.equipmentTemplate(eq);
         })}
+          </div>
           </div>
 	    </div>`;
     }
@@ -7411,6 +7415,8 @@ RackerStacker.styles = i$2 `
 		margin-left: 0px;  
 		padding: 10px; 
 		border-radius: 10px; 
+		position: fixed;
+		z-index: 30;
 	}
 	.hostnameLabelInner {
 		position: absolute; 
