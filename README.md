@@ -22,7 +22,7 @@ Each equipment can track any number of sensors.  If any of these sensors are bad
   - the rack containing the "bad" equipment also pulses red
   - if you hover over the bad equipment it will show sensor(s) are causing the error
 
-An example of this is shown here: ![state with errors](img/racker_stacker_errors.jpg)
+An example of this is shown here: ![state with errors](img/racker_stacker_errors2.jpg)
 
 # Dark Mode
 We also support dark mode: ![dark mode](img/racker_dark.jpg)
