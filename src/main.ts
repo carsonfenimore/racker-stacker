@@ -42,7 +42,6 @@ class RackerStacker extends LitElement {
 		padding: 20px; 
 		padding-left: 35px; 
 		padding-right: 35px; 
-		background-color: grey;
 	}
 	.rackElIndicator {
 		color: rgb(80,80,80); 
@@ -74,7 +73,6 @@ class RackerStacker extends LitElement {
 		margin-left: 0px;  
 		padding: 10px; 
 		border-radius: 10px; 
-		background-color: grey; 
 	}
 	.hostnameLabelInner {
 		position: absolute; 
@@ -285,8 +283,12 @@ class RackerStacker extends LitElement {
     var triggeredSensors = this.renderSensorBlock(sensors.bad, "Triggered Sensors", "triggeredSensors");
     var goodSensors = this.renderSensorBlock(sensors.good, "Nominal Sensors", "nominalSensors");
         
+    var infoTextColor = 'grey';
+    if (this._hass.themes.darkMode){
+        infoTextColor = 'black';
+    }
     var infoTag = html`
-    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; min-width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px;">
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; min-width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px; color: ${infoTextColor}">
         <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
         ${urlTag} 
         ${triggeredSensors}
@@ -458,12 +460,21 @@ class RackerStacker extends LitElement {
     }, 10);
   }
 
+  getBackground(){
+    if (this._hass.themes.darkMode)
+        return 'black';
+    return 'grey';
+  }
 
   rackHeader(){
 	  const headerHeight = 30;
 
+      var border = 'none';
+      if (this._hass.themes.darkMode) { 
+        border = '1px solid white';
+      }
 	  var name = this._rack?.name ? this._rack.name : html`&nbsp;`;
-	  return html` <div class="rackHeader" style="height ${headerHeight}px; line-height: ${headerHeight}px;">
+	  return html` <div class="rackHeader" style="border: ${border}; background-color: ${this.getBackground()}; height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name }
 			   </div>`;
   }
@@ -518,11 +529,13 @@ class RackerStacker extends LitElement {
         this._scrollInited = true;
         window.setTimeout( () => {this.initScroll()}, 100 );
     }
+
     return html`
     	<div> 
 	      ${this.rackHeader()}
 	      ${this.renderRackAlarm()}
-          <div class="rack" style="width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
+
+          <div class="rack" style="background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
           		${ Array.from({length: this._rackU}, (_, i) => i).map( (racku) => {
           			return this.rackElLabel(racku);
           			}) }
