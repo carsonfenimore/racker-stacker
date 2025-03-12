@@ -22,6 +22,10 @@ class RackerStacker extends LitElement {
   readonly _rackWidthInches = 19;
   readonly _pixelsRackWidthMax = 410.0;
   readonly _rackAlarmBorderPixels = 32;
+  readonly _indicatorOffset = 4;
+  readonly _indicatorOffsetRight = 12;
+  readonly _indicatorWidth = 25;
+  readonly _equipmentOffsetLeft = 35;
 
   _models = new Map<string, RackerEquipmentModel>();
   _modelErrors = new Map<string, string>();
@@ -44,7 +48,6 @@ class RackerStacker extends LitElement {
 		padding-right: 35px; 
 	}
 	.rackElIndicator {
-		color: rgb(80,80,80); 
 		text-align: right; 
 		font-weight: 900; 
 		font-size: 20px;
@@ -257,7 +260,7 @@ class RackerStacker extends LitElement {
     var model_image = `${this._urlRoot}/models/${eq.model}_${facing}.${img_type}`;
     const header_offset = 5; // was 55
     let posu = header_offset + Math.floor(this._rackU - eq.position_topu + 1)*this._pixelsPerU;
-    var posleft = 35;
+    var posleft = this._equipmentOffsetLeft;
     if (eq.x_offset_inches){
         const widthPixelsPerInch = this._pixelsRackWidthMax / this._rackWidthInches;
         posleft += eq.x_offset_inches * widthPixelsPerInch;
@@ -287,7 +290,7 @@ class RackerStacker extends LitElement {
     var goodSensors = this.renderSensorBlock(sensors.good, "Nominal Sensors", "nominalSensors");
         
     var infoTextColor = 'grey';
-    if (this._hass.themes.darkMode){
+    if (this.darkMode()){
         infoTextColor = 'black';
     }
     var infoTag = html`
@@ -464,7 +467,7 @@ class RackerStacker extends LitElement {
   }
 
   getBackground(){
-    if (this._hass.themes.darkMode)
+    if (this.darkMode())
         return 'black';
     return 'grey';
   }
@@ -473,13 +476,17 @@ class RackerStacker extends LitElement {
 	  const headerHeight = 30;
 
       var border = 'none';
-      if (this._hass.themes.darkMode) { 
+      if (this.darkMode()){
         border = '1px solid white';
       }
 	  var name = this._rack?.name ? this._rack.name : html`&nbsp;`;
 	  return html` <div class="rackHeader" style="border: ${border}; background-color: ${this.getBackground()}; height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name }
 			   </div>`;
+  }
+
+  darkMode(){
+    return this._hass.themes.darkMode;
   }
 
   renderRackAlarm(){
@@ -495,16 +502,24 @@ class RackerStacker extends LitElement {
     }
   }
 
-  rackElLabel(racku) {
-    const indicatorWidth = 25;
-    const indicatorOffset = 5;
-    const indicatorOffsetRight = 7;
+  rackElLabels(racku) {
+
+    // make left and right labels
+    return html`<div>
+            ${this.makeRackElLabel(racku, this._indicatorOffset)}
+            ${this.makeRackElLabel(racku, this._indicatorWidth + this._indicatorOffset + this._pixelsRackWidthMax + this._indicatorOffsetRight) }
+		</div>`; 
+  }
+
+  makeRackElLabel(racku, leftOffset){
     const indicatorVerticalOffset = 45; // was 95;
     const topPix = indicatorVerticalOffset+(racku)*this._pixelsPerU + this._pixelsPerU/4.0;
-    return html`<div>
-    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${indicatorOffset}px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
-    			<div class="rackElIndicator" style="top: ${topPix}px; left: ${this._pixelsRackWidthMax + indicatorWidth + indicatorOffset + indicatorOffsetRight }px; width: ${indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>
-		</div>`; 
+    var rackElIndColor = "rgb(80,80,80)";
+    if (this.darkMode()){
+       rackElIndColor = "white";
+    } 
+
+    return html`<div class="rackElIndicator" style="color: ${rackElIndColor}; top: ${topPix}px; left: ${leftOffset}px; width: ${this._indicatorWidth}px; height: ${this._pixelsPerU}px; ">${this._rackU - racku}</div>`;
   }
 
   initScroll(){
@@ -533,6 +548,12 @@ class RackerStacker extends LitElement {
         window.setTimeout( () => {this.initScroll()}, 100 );
     }
 
+    var rackBorder = "none";
+    var rackInsideBorder;
+    if (this.darkMode()){
+        rackBorder = "solid 1px white";
+        rackInsideBorder = html`<div class="rack" style="left: ${this._equipmentOffsetLeft}px; top: ${this._indicatorOffset + this._indicatorWidth}px; position: absolute; border: ${rackBorder}; background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax - this._equipmentOffsetLeft*2}px; height: ${this._rackU*this._pixelsPerU - this._indicatorWidth*2}px;">`;
+    }
     return html`
     	<div style="position: absolute">
 	      ${this.rackHeader()}
@@ -540,9 +561,10 @@ class RackerStacker extends LitElement {
     	<div style="position: absolute; top: 55px;">
 	      ${this.renderRackAlarm()}
 
-          <div class="rack" style="background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
+          <div class="rack" style="border: ${rackBorder}; background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
+                ${ rackInsideBorder }
           		${ Array.from({length: this._rackU}, (_, i) => i).map( (racku) => {
-          			return this.rackElLabel(racku);
+          			return this.rackElLabels(racku);
           			}) }
           		${this._config.equipment.map( (eq) => {
           			return this.equipmentTemplate(eq);
