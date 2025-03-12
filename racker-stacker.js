@@ -67,7 +67,7 @@ const i=(i,e)=>"method"===e.kind&&e.descriptor&&!("value"in e.descriptor)?{...e,
  */var n;null!=(null===(n=window.HTMLSlotElement)||void 0===n?void 0:n.prototype.assignedElements)?(o,n)=>o.assignedElements(n):(o,n)=>o.assignedNodes(n).filter((o=>o.nodeType===Node.ELEMENT_NODE));
 
 var name = "racker";
-var version = "1.0.5";
+var version = "1.0.6";
 var type = "module";
 var description = "A home assistant card for modelling and monitoring racks of equipment";
 var scripts = {
