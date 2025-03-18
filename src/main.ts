@@ -36,9 +36,6 @@ class RackerStacker extends LitElement {
   _scrollInited = false;
 
   static styles = css`
-	.blink_me {
-		animation: blinker ${ALARM_FLASH_CYCLE_SECONDS}s ease-in-out infinite;
-	}
 	.rack { 
 		margin: 0 auto; 
 		margin-left: 0px; 
@@ -219,6 +216,13 @@ class RackerStacker extends LitElement {
         </div>`;
   }
 
+  getBlinkMe(){
+	var cycleSecs = ALARM_FLASH_CYCLE_SECONDS;
+    if (this._rack.alarm_flash_period) {
+        cycleSecs = this._rack.alarm_flash_period;
+    }
+    return `animation: blinker ${cycleSecs}s ease-in-out infinite`;
+  }
   
   equipmentTemplate(eq){	
     const lineHeight = 35;
@@ -271,9 +275,8 @@ class RackerStacker extends LitElement {
 
     // for now, only color FAILING equipment
     if (sensors.bad.length){
-      const color = "rgba(255,0,0,0.7)";
       stateIndicator = html`
-	      <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
+	      <div style="${this.getBlinkMe()}; position: absolute; background: ${this.getErrorColor()}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
       `;
     }
 
@@ -496,7 +499,7 @@ class RackerStacker extends LitElement {
     for (const eq of this._config.equipment){
       if (this.countEquipmentErrors(eq, this._hass)){
 	    return html`
-          	<div class="blink_me rackError" style="width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
+          	<div class="rackError" style="${this.getBlinkMe()}; width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels*2}px; height: ${this._rackU*this._pixelsPerU-this._rackAlarmBorderPixels*2}px; border: ${this._rackAlarmBorderPixels}px solid ${this.getErrorColor()}; ">
 		</div>`;
       }
     }

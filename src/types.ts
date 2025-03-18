@@ -31,4 +31,7 @@ export interface RackInstance {
   flip?: boolean;
   scrollx?: number;
   scrolly?: number;
+  header_color?: string;
+  alarm_color?: string;
+  alarm_flash_period?: number;
 }
