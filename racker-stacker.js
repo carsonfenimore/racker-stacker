@@ -7057,6 +7057,13 @@ class RackerStacker extends s {
             ${errorGuts}
         </div>`;
     }
+    getBlinkMe() {
+        var cycleSecs = ALARM_FLASH_CYCLE_SECONDS;
+        if (this._rack.alarm_flash_period) {
+            cycleSecs = this._rack.alarm_flash_period;
+        }
+        return `animation: blinker ${cycleSecs}s ease-in-out infinite`;
+    }
     equipmentTemplate(eq) {
         var _a, _b;
         const lineHeight = 35;
@@ -7106,9 +7113,8 @@ class RackerStacker extends s {
         var sensors = this.evaluateSensors(this.getEquipmentSensors(eq), this._hass);
         // for now, only color FAILING equipment
         if (sensors.bad.length) {
-            const color = "rgba(255,0,0,0.7)";
             stateIndicator = x `
-	      <div class="blink_me" style="position: absolute; background: ${color}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
+	      <div style="${this.getBlinkMe()}; position: absolute; background: ${this.getErrorColor()}; z-index: 3; width: ${width_pixels}px; height: ${height_pixels}px"></div>
       `;
         }
         // Show a label describing which of the sensors is erroring
@@ -7305,13 +7311,23 @@ class RackerStacker extends s {
         if (this.darkMode()) {
             border = '1px solid white';
         }
+        var background = this.getBackground();
+        if (this._rack.header_color) {
+            background = this._rack.header_color;
+        }
         var name = ((_a = this._rack) === null || _a === void 0 ? void 0 : _a.name) ? this._rack.name : x `&nbsp;`;
-        return x ` <div class="rackHeader" style="border: ${border}; background-color: ${this.getBackground()}; height ${headerHeight}px; line-height: ${headerHeight}px;">
+        return x ` <div class="rackHeader" style="border: ${border}; background-color: ${background}; height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name}
 			   </div>`;
     }
     darkMode() {
         return this._hass.themes.darkMode;
+    }
+    getErrorColor() {
+        if (this._rack.alarm_color) {
+            return this._rack.alarm_color;
+        }
+        return "rgba(255,0,0,1.0)";
     }
     renderRackAlarm() {
         if (!this._hass || !this._config)
@@ -7319,7 +7335,7 @@ class RackerStacker extends s {
         for (const eq of this._config.equipment) {
             if (this.countEquipmentErrors(eq, this._hass)) {
                 return x `
-          	<div class="blink_me rackError" style="width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels * 2}px; height: ${this._rackU * this._pixelsPerU - this._rackAlarmBorderPixels * 2}px; border: ${this._rackAlarmBorderPixels}px solid rgba(255,0,0,1.0); ">
+          	<div class="rackError" style="${this.getBlinkMe()}; width: ${this._pixelsRackWidthMax - this._rackAlarmBorderPixels * 2}px; height: ${this._rackU * this._pixelsPerU - this._rackAlarmBorderPixels * 2}px; border: ${this._rackAlarmBorderPixels}px solid ${this.getErrorColor()}; ">
 		</div>`;
             }
         }
@@ -7393,9 +7409,6 @@ class RackerStacker extends s {
     }
 }
 RackerStacker.styles = i$2 `
-	.blink_me {
-		animation: blinker ${ALARM_FLASH_CYCLE_SECONDS}s ease-in-out infinite;
-	}
 	.rack { 
 		margin: 0 auto; 
 		margin-left: 0px; 
