@@ -482,14 +482,25 @@ class RackerStacker extends LitElement {
       if (this.darkMode()){
         border = '1px solid white';
       }
+      var background = this.getBackground();
+      if (this._rack.header_color){
+        background = this._rack.header_color;
+      }
 	  var name = this._rack?.name ? this._rack.name : html`&nbsp;`;
-	  return html` <div class="rackHeader" style="border: ${border}; background-color: ${this.getBackground()}; height ${headerHeight}px; line-height: ${headerHeight}px;">
+	  return html` <div class="rackHeader" style="border: ${border}; background-color: ${background}; height ${headerHeight}px; line-height: ${headerHeight}px;">
 			     ${name }
 			   </div>`;
   }
 
   darkMode(){
     return this._hass.themes.darkMode;
+  }
+
+  getErrorColor(){
+    if (this._rack.alarm_color) {
+        return this._rack.alarm_color;
+    }
+    return "rgba(255,0,0,1.0)";
   }
 
   renderRackAlarm(){
