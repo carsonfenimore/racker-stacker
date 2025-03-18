@@ -34,4 +34,5 @@ export interface RackInstance {
   header_color?: string;
   alarm_color?: string;
   alarm_flash_period?: number;
+  rack_vertical_size_pixels?: number; // if specified, the rack will be clipped to this size - this can help if you only want to show a part of it, say, in conjunction with scrolly
 }

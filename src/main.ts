@@ -140,6 +140,7 @@ class RackerStacker extends LitElement {
   set hass(hass) {
     this._hass = hass;
     this.requestUpdate();
+    //console.log("HASS update ", new Date());
   }
 
   setConfig(config: RackInstance) {
@@ -297,7 +298,7 @@ class RackerStacker extends LitElement {
         infoTextColor = 'black';
     }
     var infoTag = html`
-    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(eq, infoPopupId);} }  style="top: ${posu}px; min-width: ${this._pixelsRackWidthMax}px; left: ${width_pixels}px; color: ${infoTextColor}">
+    <div id=${infoPopupId} class="infoLabel" @mouseleave=${ (e) => {this.infoPopupMouseLeave(eq, equipLabelIdStr, infoPopupId);}}  @mouseenter=${ (e) => {this.infoMouseEnter(e, eq, infoPopupId);} }  style="color: ${infoTextColor}">
         <div class="equipmentTitle">${eq.hostname} (${eq.model}) </div>
         ${urlTag} 
         ${triggeredSensors}
@@ -306,7 +307,7 @@ class RackerStacker extends LitElement {
 
     // Show the equipment hostname (if mouse over)
     var hostnameLabel = html`
-    	<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(eq, equipLabelIdStr, infoPopupId);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipLabelIdStr, infoPopupId);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
+    	<div class="hostnameLabel" @mouseenter=${ (e) => {this.hostnameLabelMouseEnter(e, eq, equipLabelIdStr, infoPopupId);}} @mouseleave=${ (e) => {this.hostnameLabelMouseLeave(eq, equipLabelIdStr, infoPopupId);} } style="width: ${width_pixels}px; height: ${height_pixels}px; ">
     		<div id="${equipLabelIdStr}" class="hostnameLabelInner" style="line-height: ${lineHeight}px; height: ${lineHeight}px;">${eq.hostname}</div>
 	</div>`;
     return html`
@@ -439,7 +440,7 @@ class RackerStacker extends LitElement {
   }
 
 
-  infoMouseEnter(eq, infoPopupId){
+  infoMouseEnter(e, eq, infoPopupId){
     this._infoPopup = infoPopupId;
   }
 
@@ -447,10 +448,12 @@ class RackerStacker extends LitElement {
 	  return this.evaluateSensors(this.getEquipmentSensors(eq), hass).bad.length;
   }
 
-  hostnameLabelMouseEnter(eq, equipIdStr, infoPopupIdStr){
-	  //console.log("Enter ",equipIdStr);
-	  //this.shadowRoot.getElementById(equipIdStr).style.display = "block";
-      this.shadowRoot.getElementById(infoPopupIdStr).style.display = "block";
+  hostnameLabelMouseEnter(e, eq, equipIdStr, infoPopupIdStr){
+      var el = this.shadowRoot.getElementById(infoPopupIdStr);
+      el.style.display = "block";
+      el.style.left = e.pageX + "px";
+      el.style.top = e.pageY + "px";
+      el.style.position = "fixed";
   }
 
   infoPopupMouseLeave(eq, equipIdStr, infoPopupIdStr){
@@ -547,7 +550,8 @@ class RackerStacker extends LitElement {
     if (this._rack.scrolly){
         scrolly = this._rack.scrolly;
     }
-    window.top.scroll(scrollx, scrolly);
+    //window.top.scroll(scrollx, scrolly);
+    this.shadowRoot.getElementById("rackScroll").scrollTop = scrolly;
     //console.log(`Scrolled ${scrollx}, ${scrolly}`);
   }
 
@@ -559,7 +563,12 @@ class RackerStacker extends LitElement {
     
     if (!this._scrollInited){
         this._scrollInited = true;
-        window.setTimeout( () => {this.initScroll()}, 100 );
+        window.setTimeout( () => {this.initScroll()}, 1000 );
+    }
+
+    var rackScroll;
+    if (this._rack.rack_vertical_size_pixels){
+        rackScroll = `height: ${this._rack.rack_vertical_size_pixels}px; overflow-y: scroll;`;
     }
 
     var rackBorder = "none";
@@ -572,7 +581,7 @@ class RackerStacker extends LitElement {
     	<div style="position: absolute">
 	      ${this.rackHeader()}
 
-    	<div style="position: absolute; top: 55px;">
+    	<div id="rackScroll" style="position: absolute; ${scroll}; ${rackScroll}; top: 55px;">
 	      ${this.renderRackAlarm()}
 
           <div class="rack" style="border: ${rackBorder}; background-color: ${this.getBackground()}; width: ${this._pixelsRackWidthMax}px; height: ${this._rackU*this._pixelsPerU}px;">
